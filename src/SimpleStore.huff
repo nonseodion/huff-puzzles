@@ -16,5 +16,43 @@
 
 
 #define macro MAIN() = takes(0) returns(0) {
-    
+  0x00
+  calldataload // [ calldata[0,32] ]
+  0xe0 // [224, calldata[0,32]]
+  shr // [funcSelector]
+  dup1 // [funcSelector, funcSelector]
+
+  __FUNC_SIG(store) // [ storeSig, funcSelector, funcSelector ]
+  eq // [EQUAL, funcSelector]
+  store // [ storePos, EQUAL, funcSelector ]
+  jumpi // [ funcSelector ]
+
+  __FUNC_SIG(read) // [ readSig, funcSelector ]
+  eq // [EQUAL]
+  read // [ readPos, EQUAL ]
+  jumpi // []
+
+  0x00 0x00 // [0, 0]
+  revert 
+
+  read:
+    READ()
+  store:
+    STORE()
+}
+
+#define macro READ() = takes(0) returns(0) {
+  0x00
+  sload
+  0x00
+  mstore
+  0x20 0x00
+  return
+}
+
+#define macro STORE() = takes(0) returns(0) {
+  0x04
+  calldataload
+  0x00
+  sstore
 }
