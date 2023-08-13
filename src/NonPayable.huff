@@ -9,5 +9,14 @@
  */
 
 #define macro MAIN() = takes(0) returns(0) {
+  0x00 0x00 // save deployment gas by pushing 0x00 0x00 here.
+  callvalue
+  iszero
+  stopPos
+  jumpi
 
+  revert
+
+  stopPos:
+    return
 }
