@@ -13,5 +13,38 @@
 
 
 #define macro MAIN() = takes(0) returns(0) {
+  0x00
+  calldataload // [ calldata[0,32] ]
+  0xe0 // [224, calldata[0,32]]
+  shr // [funcSelector]
 
+  __FUNC_SIG(multiply) // [ multiplySig, funcSelector ]
+  eq // [EQUAL]
+  multiply // [ multiplyPos, EQUAL ]
+  jumpi // []
+
+  0x00 0x00 // [0, 0]
+  revert 
+
+  multiply:
+    MULTIPLY()
+}
+
+#define macro MULTIPLY() = takes(0) returns(0) {
+  0x04 calldataload // [val1]
+  0x24 calldataload // [val2, val1]
+
+  dup2 dup2 // [val2, val1, val2, val1]
+  mul // [product, val2, val1]`
+  dup1 swap2 swap1 // [product, val2, product, val1]
+  div // [quotient, product, val1]
+  dup3 // [val1, quotient, product, val1]
+  eq // [eq, product, val1]
+  returnProd // [returnProdPos, eq, product, val1]
+  jumpi
+  0x00 0x00 revert
+
+  returnProd:
+    0x00 mstore // [val1] (store product in memory)
+    0x20 0x00 return // return product
 }
