@@ -13,5 +13,14 @@
 
 
 #define macro MAIN() = takes(0) returns(0) {
-    
+  0x08c379a0 0xe0
+  shl
+  0x00
+  mstore // store "keccak256(Error(string))"
+  0x20 0x04
+  mstore // store position
+  0x094f6e6c792048756666 0x2d
+  mstore // store length+content
+  0x64 0x04
+  revert
 }
