@@ -12,5 +12,48 @@
 
 
 #define macro MAIN() = takes(0) returns(0) {
+  0x00
+  calldataload // [ calldata[0,32] ]
+  0xe0 // [224, calldata[0,32]]
+  shr // [funcSelector]
 
+  __FUNC_SIG(sumArray) // [ multiplySig, funcSelector ]
+  eq // [EQUAL]
+  sumArrayJump // [ multiplyPos, EQUAL ]
+  jumpi // []
+
+  0x00 0x00 // [0, 0]
+  revert 
+
+  sumArrayJump:
+    SUMARRAY()
+}
+
+#define macro SUMARRAY() = takes(0) returns(0) {
+  0x00
+  0x24
+  calldataload // [arrayLength, sum]
+  0x00 // [arrayPos, arrayLength, sum]
+
+  loopSumJump:
+    dup2 dup2 // [ arrayPos, arrayLength, arrayPos, arrayLength, sum]
+    eq
+    returnJump jumpi
+    dup1 // [arrayPos, arrayPos, arrayLength, sum]
+    0x20 mul
+    0x44 add // [callPos, arrayPos, arrayLength, sum]
+    calldataload // [e, arrayPos, arrayLength, sum]
+    dup4
+    add // [newSum, arrayPos, arrayLength, oldSum]
+    swap3 // [oldSum, arrayPos, arrayLength, newSum]
+    pop
+    0x01 // [ nextArrayPos, arrayLength, newSum]
+    add
+    loopSumJump jump
+
+  returnJump:
+    dup3 // [sum,  arrayPos, arrayLength, sum]
+    0x00 mstore
+    0x20 0x00
+    return
 }
