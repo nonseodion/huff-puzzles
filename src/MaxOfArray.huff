@@ -10,5 +10,58 @@
 #define function maxOfArray(uint256[]) payable returns(uint256)
 
 #define macro MAIN() = takes(0) returns(0) {
-   
+  0x00
+  calldataload // [ calldata[0,32] ]
+  0xe0 // [224, calldata[0,32]]
+  shr // [funcSelector]
+
+  __FUNC_SIG(maxOfArray) // [ maxOfArrayJumpSig, funcSelector ]
+  eq // [EQUAL]
+  maxOfArrayJump // [ maxOfArrayJump, EQUAL ]
+  jumpi // []
+
+  0x00 0x00 // [0, 0]
+  revert 
+
+  maxOfArrayJump:
+    MAXOFARRAY()
+}
+
+#define macro MAXOFARRAY() = takes(0) returns(0) {
+  0x24
+  calldataload // [ arrayLength ]
+  dup1 0x00 eq // zero length check
+  revertJump jumpi 
+  0x20 mul 0x24 add // [ lastIndex ] (length * wordSize + offset)
+
+  0x44
+  calldataload // [ max, lastIndex ]
+  0x64 // [ secondIndex, max, lastIndex ]
+
+  // takes [ nextIndex, max, lastIndex]
+  maxCheckJump:
+    dup3 dup2 gt // index check
+    returnJump jumpi 
+
+    dup1
+    calldataload // [currElement, currIndex, max, lastIndex]
+    dup3 dup2 lt // max check
+    continueJump jumpi
+    swap2 // [oldMax, currIndex, newMax, lastIndex] switch max
+
+    continueJump:
+    pop
+    0x20 add // add to current index
+    maxCheckJump jump // [nextIndex, max, lastIndex]
+    
+
+  returnJump:
+    pop
+    0x00 mstore
+    0x20 0x00
+    return
+
+  revertJump:
+    0x00 0x00
+    revert
 }
