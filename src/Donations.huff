@@ -8,5 +8,47 @@
 #define function donated(address) payable returns(uint256)
 
 #define macro MAIN() = takes(0) returns(0) {
-    
+        // function selector
+  0x00
+  calldataload // [ calldata[0,32] ]
+  0xe0 // [224, calldata[0,32]]
+  shr // [funcSelector]
+  dup1 // [funcSelector, funcSelector]
+
+  __FUNC_SIG(donated) // [ add1Sig, funcSelector, funcSelector ]
+  eq // [EQUAL, funcSelector]
+  donatedJump // [ add1Pos, EQUAL, funcSelector ]
+  jumpi // [funcSelector]
+
+  0x00
+  eq // checks if funcSelector == 0
+  receiveJump
+  jumpi
+
+  0x00 0x00 // [0, 0]
+  revert 
+
+  donatedJump:
+    DONATED()
+
+  receiveJump:
+    RECEIVEJUMP()
+}
+
+#define macro RECEIVEJUMP() = takes(0) returns(0) {
+  caller
+  sload
+  callvalue
+  add
+  caller
+  sstore
+  0x00 0x00 return
+}
+
+#define macro DONATED() = takes(0) returns(0) {
+  caller
+  sload
+  0x00
+  mstore
+  0x20 0x00 return
 }
