@@ -12,5 +12,29 @@
 
 
  #define macro MAIN() = takes(0) returns(0) {
-    
+  0x00
+  calldataload // [ calldata[0,32] ]
+  0xe0 // [224, calldata[0,32]]
+  shr // [funcSelector]
+
+  __FUNC_SIG(sendEther) // [ maxOfArrayJumpSig, funcSelector ]
+  eq // [EQUAL]
+  sendEtherJump // [ maxOfArrayJump, EQUAL ]
+  jumpi // []
+
+  0x00 0x00 // [0, 0]
+  revert 
+
+  sendEtherJump:
+    SENDETHER()
+ }
+
+ #define macro SENDETHER() = takes(0) returns(0) {
+  0x00 0x00 0x00 0x00 // [ argsOffset, argsSize, retOffset, retSize ]
+  callvalue // [value, argsOffset, argsSize, retOffset, retSize]
+  0x04 calldataload // [address, value, argsOffset, argsSize, retOffset, retSize]
+  0x00 // [gas, address, value, argsOffset, argsSize, retOffset, retSize]
+  call
+  0x00 0x00
+  return
  }
