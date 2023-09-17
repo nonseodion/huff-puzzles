@@ -14,5 +14,65 @@
 
 
  #define macro MAIN() = takes(0) returns(0) {
-   
+    // function selector
+    0x00
+    calldataload // [ calldata[0,32] ]
+    0xe0 // [224, calldata[0,32]]
+    shr // [funcSelector]
+
+    __FUNC_SIG(distribute) // [ add1Sig, funcSelector ]
+    eq // [EQUAL]
+    distributeJump // [ add1Pos, EQUAL ]
+    jumpi // []
+
+    0x00 0x00 // [0, 0]
+    revert 
+
+    distributeJump:
+      DISTRIBUTE()
  }
+
+ #define macro DISTRIBUTE() = takes(0) returns(0) {
+  callvalue 
+  0x24 calldataload  // [arrayLength, value]
+  
+  // zero check
+  dup1 // [arrayLength, arrayLength, value]
+  0x00 eq 
+  revertJump
+  jumpi
+  
+  //loop preparations
+  // divide value by array length
+  dup1
+  swap2
+  div // [equalValue, arrayLength]
+
+  // index of last array element
+  swap1
+  0x20 mul 0x24 add // [ lastIndex, equalValue]
+
+
+  // send loop
+  loopStartJump:
+    dup1  
+    calldataload // [address, lastIndex, equalValue]
+    dup3 // [equalValue, address, lastIndex, equalValue]
+    0x00 0x00 0x00 0x00
+    swap4 dup6 gas 
+    call // send value
+    pop pop // [lastIndex, equalValue]
+    0x20
+    swap1
+    sub
+    dup1 // [newlastIndex, newlastIndex, equalValue]
+    0x24 lt 
+    loopStartJump
+    jumpi // [newLastIndex, equalValue]
+    0x00 mstore
+  0x20 0x00 return
+
+  revertJump:
+    0x00 0x00 revert
+ }
+ 
