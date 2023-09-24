@@ -25,5 +25,147 @@
  #define error ZeroArray()
 
  #define macro MAIN() = takes(0) returns(0) {
-    
+  0x00
+  calldataload // [ calldata[0,32] ]
+  0xe0 // [224, calldata[0,32]]
+  shr // [funcSelector]
+  
+  dup1 // [funcSelector, funcSelector]
+  __FUNC_SIG(pushh) // [ storeSig, funcSelector, funcSelector ]
+  eq // [EQUAL, funcSelector]
+  pushhJump // [ storePos, EQUAL, funcSelector ]
+  jumpi // [ funcSelector ]
+
+  dup1 // [funcSelector, funcSelector]
+  __FUNC_SIG(popp) // [ readSig, funcSelector ]
+  eq // [EQUAL]
+  poppJump // [ readPos, EQUAL ]
+  jumpi // []
+
+  dup1 // [funcSelector, funcSelector]
+  __FUNC_SIG(length) // [ readSig, funcSelector ]
+  eq // [EQUAL]
+  lengthJump // [ readPos, EQUAL ]
+  jumpi // []
+
+  dup1 // [funcSelector, funcSelector]
+  __FUNC_SIG(read) // [ readSig, funcSelector ]
+  eq // [EQUAL]
+  readJump // [ readPos, EQUAL ]
+  jumpi // []
+
+  dup1 // [funcSelector, funcSelector]
+  __FUNC_SIG(write) // [ readSig, funcSelector ]
+  eq // [EQUAL]
+  writeJump // [ readPos, EQUAL ]
+  jumpi // []
+
+  0x00 0x00 // [0, 0]
+  revert 
+
+  pushhJump:
+    PUSHH()
+  poppJump:
+    POPP()
+  lengthJump:
+    LENGTH()
+  readJump:
+    READ()
+  writeJump:
+    WRITE()
+ }
+
+ #define macro LENGTH() = takes(0) returns(0) {
+  0x00 sload
+  0x00 mstore
+  0x20 0x00 return
+ }
+
+ #define macro PUSHH() = takes(0) returns(0) {
+  // get next slot
+  0x00 sload
+  dup1
+  arraySlot()
+  add // [nextSlot, length]
+  0x04 calldataload swap1 // [nextSlot, num, length]
+  sstore
+  0x01 add 0x00 sstore // store new length
+  0x00 0x00 return
+ }
+
+ #define macro POPP() = takes(0) returns(0) {
+  // reduce length (length - 1)
+  0x01
+  0x00 sload
+    // check for zero array
+    dup1 0x00 eq zeroArrayJump jumpi
+  sub
+  dup1
+  0x00 sstore // [ newLength ]
+
+  // get last index
+  arraySlot()
+  add // [ lastIndex ]
+  
+  // 
+  dup1
+  sload // [ lastValue, lastIndex ]
+  swap1 0x00 swap1 // [lastIndex, 0, lastValue]
+  sstore // [lastValue]
+
+  // return lastValue (isn't part of spec)
+  0x00 mstore
+  0x20 0x00 return
+
+  zeroArrayJump:
+  __ERROR(ZeroArray)
+  0x00 mstore
+  0x04 0x00 revert
+ }
+
+ #define macro READ() = takes(0) returns(0) {
+  0x04 calldataload // [index]
+
+  // check length
+  dup1 // [index, index]
+  0x00 sload
+  gt
+  0x00 eq
+  outOfBoundsJump
+  jumpi // [index]
+
+  // get index
+  arraySlot() // [slotIndex, index]
+  add
+  sload
+  0x00 mstore
+  0x20 0x00 return
+
+  // throw error
+  outOfBoundsJump:
+  __ERROR(OutOfBounds)
+  0x00 mstore
+  0x04 0x00 revert
+ }
+
+ #define macro WRITE() = takes(0) returns(0) {
+  0x24 calldataload 0x04 calldataload // [index, num]
+  // check index is within length
+  dup1 0x00 sload gt // [arrayLength > index, index, num]
+  0x00 eq outOfBoundsJump jumpi // [index, num]
+
+  // store num
+  arraySlot() add // [arrayIndexSlot, num]
+  sstore
+  0x00 0x00 return
+
+  outOfBoundsJump:
+  __ERROR(OutOfBounds)
+  0x00 mstore
+  0x04 0x00 revert
+ }
+
+ #define fn arraySlot() = takes(0) returns(1) {
+  0x20 0x00
+  sha3
  }
